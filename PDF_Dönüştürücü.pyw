@@ -45,6 +45,8 @@ class MultiToolConverter(TkinterDnD.Tk):
         self.notebook.add(self.tab2, text="  ZIP'ten PDF Çıkar  ")
         self.setup_tab2()
 
+        self.setup_help_tab()
+
         self.setup_common_bottom_ui()
         
         self.load_settings()
@@ -81,7 +83,7 @@ class MultiToolConverter(TkinterDnD.Tk):
         settings_frame = tk.LabelFrame(self.tab1, text="3. Adım: Ayarları Yapılandırın", padx=10, pady=10)
         settings_frame.pack(fill="x", pady=10)
         self.engine_var = tk.StringVar(value="word")
-        tk.Radiobutton(settings_frame, text="Microsoft Word Motoru", variable=self.engine_var, value="word").pack(anchor="w")
+        tk.Radiobutton(settings_frame, text="Microsoft Office Motoru", variable=self.engine_var, value="word").pack(anchor="w")
         tk.Radiobutton(settings_frame, text="LibreOffice Motoru", variable=self.engine_var, value="libreoffice").pack(anchor="w")
         libre_path_frame = tk.Frame(settings_frame)
         libre_path_frame.pack(fill="x", padx=20, pady=(5,0))
@@ -108,6 +110,47 @@ class MultiToolConverter(TkinterDnD.Tk):
         tk.Button(zip_button_frame, text="Dosya Ekle...", command=self.add_zip_files).pack(fill="x", pady=2)
         tk.Button(zip_button_frame, text="Seçileni Sil", command=self.delete_selected_zip_items).pack(fill="x", pady=2)
         tk.Button(zip_button_frame, text="Listeyi Temizle", command=self.clear_zip_source_list).pack(fill="x", pady=2)
+
+    def setup_help_tab(self):
+        help_frame = ttk.Frame(self.notebook)
+        self.notebook.add(help_frame, text="  Yardım  ")
+        help_text_widget = scrolledtext.ScrolledText(help_frame, wrap=tk.WORD, padx=10, pady=10)
+        help_text_widget.pack(fill="both", expand=True)
+
+        help_text = """
+PDF Araç Kutusu Kullanım Kılavuzu
+
+Bu program, çeşitli dosya türlerini PDF formatına dönüştürmenize ve ZIP arşivlerindeki PDF dosyalarını çıkarmanıza olanak tanır.
+
+ÖZELLİKLER
+
+1. Belgeden PDF'e Dönüştürme:
+   - Desteklenen Formatlar:
+     - Microsoft Office Motoru: .docx, .doc, .rtf, .xls, .xlsx
+     - LibreOffice Motoru: .docx, .doc, .rtf, .odt, .xls, .xlsx, .ods
+   - Nasıl Kullanılır:
+     1. 'Belgeden PDF'e Dönüştür' sekmesini seçin.
+     2. 'Dosya Ekle' veya 'Klasör Ekle' butonlarını kullanarak veya dosyaları/klasörleri doğrudan listeye sürükleyip bırakarak işlenecek öğeleri ekleyin.
+     3. (İsteğe bağlı) 'Hedef Klasör Seç' butonu ile tüm PDF'lerin kaydedileceği ortak bir klasör belirleyin. Belirlenmezse, PDF'ler orijinal dosyaların yanına kaydedilir.
+     4. Kullanmak istediğiniz dönüştürme motorunu seçin (Microsoft Office veya LibreOffice).
+        - LibreOffice motorunu ilk kez kullanıyorsanız, sistemde kurulu olan 'soffice.exe' dosyasının yolunu 'Gözat...' butonu ile göstermeniz gerekebilir. Bu ayar otomatik olarak kaydedilecektir.
+     5. 'İşlemi Başlat' butonuna tıklayın.
+
+2. ZIP'ten PDF Çıkarma:
+   - Bir .zip arşivi içindeki tüm .pdf uzantılı dosyaları arşivin bulunduğu dizine çıkarır.
+   - Nasıl Kullanılır:
+     1. 'ZIP'ten PDF Çıkar' sekmesini seçin.
+     2. 'Dosya Ekle' butonunu kullanarak veya .zip dosyalarını listeye sürükleyip bırakarak işlenecek arşivleri ekleyin.
+     3. 'İşlemi Başlat' butonuna tıklayın.
+
+Genel İpuçları:
+- 'İşlem Geçmişi' alanından tüm adımları ve olası hataları takip edebilirsiniz.
+- Dönüştürme sırasında bir hata oluşursa, 'Başarısız Öğeler' sekmesinde ilgili dosyaların bir listesini bulabilirsiniz.
+- 'Duraklat' ve 'İptal Et' butonları ile uzun süren işlemleri kontrol edebilirsiniz.
+- 'Hata Ayıklama Günlüğünü Aktif Et' seçeneği, sürükle-bırak gibi özelliklerde sorun yaşanması durumunda daha detaylı bilgi almak için kullanılabilir.
+"""
+        help_text_widget.insert(tk.END, help_text)
+        help_text_widget.config(state="disabled")
 
     def setup_common_bottom_ui(self):
         self.control_frame = tk.Frame(self.main_frame)
@@ -246,7 +289,7 @@ class MultiToolConverter(TkinterDnD.Tk):
     def start_conversion_thread(self):
         files_to_process = self.find_files_to_convert()
         if not files_to_process: messagebox.showinfo("Bilgi", "Listede dönüştürülecek geçerli bir dosya bulunamadı."); return
-        self.run_process(self.run_word_conversion if self.engine_var.get() == "word" else self.run_libreoffice_conversion, files_to_process)
+        self.run_process(self.run_msoffice_conversion if self.engine_var.get() == "word" else self.run_libreoffice_conversion, files_to_process)
 
     def start_zip_extraction_thread(self):
         if not self.zip_source_items: messagebox.showinfo("Bilgi", "Listede işlenecek .zip dosyası bulunamadı."); return
@@ -276,8 +319,8 @@ class MultiToolConverter(TkinterDnD.Tk):
         for item in failed_files: self.failed_files_listbox.insert(tk.END, os.path.basename(item))
 
     def find_files_to_convert(self):
-        supported_formats = (".docx", ".doc", ".rtf")
-        if self.engine_var.get() == "libreoffice": supported_formats += (".odt",)
+        supported_formats = (".docx", ".doc", ".rtf", ".xls", ".xlsx")
+        if self.engine_var.get() == "libreoffice": supported_formats += (".odt", ".ods")
         files_to_process = set()
         for item_path in self.source_items:
             if os.path.isfile(item_path):
@@ -293,30 +336,63 @@ class MultiToolConverter(TkinterDnD.Tk):
                         if file.lower().endswith(supported_formats) and not file.startswith("~"): files_to_process.add(os.path.join(item_path, file))
         return list(files_to_process)
 
-    def run_word_conversion(self, files_to_process):
-        word = None; failed_files, success_count = [], 0; was_cancelled = False
+    def run_msoffice_conversion(self, files_to_process):
+        word_app = None
+        excel_app = None
+        failed_files, success_count = [], 0
+        was_cancelled = False
         try:
-            word = win32.Dispatch("Word.Application"); word.Visible = False
             for doc_path_raw in files_to_process:
                 self.pause_event.wait()
-                if self.cancel_event.is_set(): was_cancelled = True; break
-                doc_path = os.path.normpath(os.path.abspath(doc_path_raw)); filename = os.path.basename(doc_path); doc = None
+                if self.cancel_event.is_set():
+                    was_cancelled = True
+                    break
+
+                doc_path = os.path.normpath(os.path.abspath(doc_path_raw))
+                filename = os.path.basename(doc_path)
+                output_dir = self.output_folder_path if self.output_folder_path else os.path.dirname(doc_path)
+                pdf_path = os.path.normpath(os.path.join(output_dir, os.path.splitext(filename)[0] + ".pdf"))
+
                 try:
-                    output_dir = self.output_folder_path if self.output_folder_path else os.path.dirname(doc_path)
-                    pdf_path = os.path.normpath(os.path.join(output_dir, os.path.splitext(filename)[0] + ".pdf"))
                     self.log(f"-> İşleniyor: {filename}")
-                    doc = word.Documents.Open(doc_path)
-                    if not doc: raise RuntimeError("Word belgesi açılamadı.")
-                    doc.SaveAs(pdf_path, FileFormat=17)
-                    if not os.path.exists(pdf_path): raise RuntimeError("PDF dosyası oluşturulamadı (sessiz hata).")
-                    self.log(f"   BAŞARILI -> {pdf_path}"); success_count += 1
-                except Exception as e: self.log(f"   HATA: {filename} dönüştürülemedi. Sebep: {e}"); failed_files.append(doc_path)
-                finally: 
-                    if doc: doc.Close(0)
+                    if doc_path.lower().endswith((".xls", ".xlsx")):
+                        if not excel_app:
+                            excel_app = win32.Dispatch("Excel.Application")
+                            excel_app.Visible = False
+                        workbook = excel_app.Workbooks.Open(doc_path)
+                        if not workbook:
+                            raise RuntimeError("Excel belgesi açılamadı.")
+                        
+                        workbook.ActiveSheet.ExportAsFixedFormat(0, pdf_path)
+
+                        workbook.Close(False) # Close without saving changes
+                    else: # Assume Word document
+                        if not word_app:
+                            word_app = win32.Dispatch("Word.Application")
+                            word_app.Visible = False
+                        doc = word_app.Documents.Open(doc_path)
+                        if not doc:
+                            raise RuntimeError("Word belgesi açılamadı.")
+                        doc.SaveAs(pdf_path, FileFormat=17)
+                        doc.Close(0)
+
+                    if not os.path.exists(pdf_path):
+                        raise RuntimeError("PDF dosyası oluşturulamadı (sessiz hata).")
+
+                    self.log(f"   BAŞARILI -> {pdf_path}")
+                    success_count += 1
+                except Exception as e:
+                    self.log(f"   HATA: {filename} dönüştürülemedi. Sebep: {e}")
+                    failed_files.append(doc_path)
+                finally:
                     self.after(0, self.update_progress)
-        except Exception as e: self.log(f"!! KRİTİK HATA: Microsoft Word başlatılamadı. Detay: {e}")
+        except Exception as e:
+            self.log(f"!! KRİTİK HATA: Microsoft Office başlatılamadı. Detay: {e}")
         finally:
-            if word: word.Quit()
+            if word_app:
+                word_app.Quit()
+            if excel_app:
+                excel_app.Quit()
             self.after(0, self.update_ui_after_conversion, success_count, failed_files, was_cancelled)
 
     def run_libreoffice_conversion(self, files_to_process):
