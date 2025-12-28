@@ -1,0 +1,7 @@
+build/
+*_extracted/
+*.docx
+*.log
+*.cmake
+*.json
+*.ts

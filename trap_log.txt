@@ -1,0 +1,12 @@
+
+!!! CORRUPTION DETECTED !!!
+Context: Replacing 'en' with '1'
+Last 20 bytes: /w:body></w:docum1t>
+
+!!! CORRUPTION DETECTED !!!
+Context: Replacing 'boy' with '1'
+Last 20 bytes: /w:body></w:docum1t>
+
+!!! CORRUPTION DETECTED !!!
+Context: Replacing 'İzo_dir1ci' with '&gt;50MΩ'
+Last 20 bytes: /w:body></w:docum1t>
