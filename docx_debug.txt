@@ -1,0 +1,4 @@
+
+[LOAD] Last 50 bytes: s w:space="708"/></w:sectPr></w:body></w:document>
+[SAVE] Last 50 bytes before write: ls w:space="708"/></w:sectPr></w:body></w:docum1t>
+[SAVE] Status: INVALID END TAG (CORRUPTION DETECTED)
